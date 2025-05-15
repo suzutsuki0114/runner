@@ -1,0 +1,86 @@
+#!/bin/bash
+
+function initialize() {
+  WORKDIR="$(pwd)"
+  cd "$(dirname ${0})"
+  TEMPDIR=$(mktemp -d)
+  source langs
+  status=0
+}
+
+function usage() {
+  cat <<EOT
+Description:
+  Run a program without compile
+
+Usage:
+  crun [Options] <File>
+
+Options:
+  --help, -h   Print this usage and exit
+EOT
+exit 0
+}
+
+function error() {
+  status="${?}"
+  case "${1}" in
+    args)
+      echo "Error! (Too many arguments)" 1>&2
+      status="1"
+      ;;
+    lang)
+      echo "Error! (No supported language)" 1>&2
+      status="2"
+      ;;
+    *)
+      echo "Error! (Exit status: ${status})" 1>&2
+      ;;
+  esac
+  rm -rf "${TEMPDIR:?}"
+  exit ${status}
+}
+
+function checkUsage() {
+  case "${1}" in
+    -h|--help)
+      usage
+      ;;
+    "")
+      usage
+      ;;
+  esac
+}
+
+function checkArgs() {
+  if [ "${#}" != 1 ]; then
+    error args
+  fi
+}
+
+function checkLang() {
+  if [ $(echo ${LANGS} | jq -r ".[].extension" | grep -qx "${1##*.}") ]; then
+    error lang
+  fi
+}
+
+function run() {
+  if [ "$(echo "${LANGS}" | jq -r ".${1##*.}.shouldCompile")" == "true" ]; then
+    $(echo "${LANGS}" | jq -r ".${1##*.}.command") || error
+    "${TEMPDIR}/${1%%.*}.out" || status="${?}"
+  elif [ "$(echo "${LANGS}" | jq -r ".${1##*.}.shouldCompile")" == "false" ]; then
+    $(echo "${LANGS}" | jq -r ".${1##*.}.command") || status="${?}"
+  else
+    error
+  fi
+}
+
+initialize "${@}"
+checkUsage "${@}"
+checkArgs "${@}"
+checkLang "${@}"
+
+run "${@}"
+
+rm -rf "${TEMPDIR:?}" || error
+exit "${status}"

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+LANGS=$(cat <<EOT
+{
+  "c" : {
+    "extension" : "c",
+    "shouldCompile" : true,
+    "command" : "gcc ${WORKDIR}/${1} -o ${TEMPDIR}/${1%%*.*}.out"
+  },
+  "cpp" : {
+    "extension" : "cpp",
+    "shouldCompile" : true,
+    "command" : "g++ ${WORKDIR}/${1} -o ${TEMPDIR}/${1%%*.*}.out"
+  },
+  "py" : {
+    "extension" : "py",
+    "shouldComlipe" : false,
+    "command" : "python ${WORKDIR}/${1}"
+  }
+}
+EOT
+  )

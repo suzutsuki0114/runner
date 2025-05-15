@@ -1,0 +1,30 @@
+#!/bin/bash
+
+function usage() {
+  cat <<EOT
+Usage:
+  crun [Options] <File>
+
+Options:
+  --help, -h   Print this usage and exit
+EOT
+  exit 0
+}
+function error() {
+  _status=${?}
+  echo "Error! (Exit status: ${_status})" 1>&2
+  exit ${_status}
+}
+
+function main() {
+  if [ "${1}" = "-h" ] || [ "${1}" = "--help" ]; then
+    usage
+  fi
+  gcc ${1} -o ${1%%.*}.out || error
+  $(pwd)/${1%%.*}.out
+  rm ${1%%.*}.out || error
+}
+
+main ${@}
+
+exit 0
